@@ -2,6 +2,7 @@
 'use strict';
 
 const assert = require('assert');
+const http = require('http');
 const request = require('./formio-supertest');
 const { wait } = require('./util');
 
@@ -261,93 +262,78 @@ module.exports = function (app, template, hook) {
         });
     });
 
-    it('Should not send emails for draft submissions', async function () {
+    it('Should not invoke webhooks for draft submissions', async function () {
       this.timeout(10000);
-      template.hooks.reset();
-
-      await new Promise((resolve, reject) => {
-        helper
-          .form('saveAsDraftEmail', [
-            {
-              type: 'textfield',
-              key: 'firstName',
-              label: 'First Name',
-              input: true,
-              validate: { required: true },
-            },
-            {
-              type: 'email',
-              key: 'email',
-              label: 'Email',
-              input: true,
-            },
-          ])
-          .action('saveAsDraftEmail', {
-            title: 'Email',
-            name: 'email',
-            handler: ['after'],
-            method: ['create', 'update'],
-            priority: 1,
-            settings: {
-              transport: 'test',
-              from: 'noreply@example.com',
-              emails: '{{ data.email }}',
-              sendEach: false,
-              subject: 'Draft should not send',
-              message: 'Hello {{ data.firstName }}',
-            },
-          })
-          .execute((err) => (err ? reject(err) : resolve()));
+      const hits = [];
+      const server = http.createServer((req, res) => {
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk;
+        });
+        req.on('end', () => {
+          hits.push({ url: req.url, body });
+          res.statusCode = 200;
+          res.end('ok');
+        });
       });
+      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+      const { port } = server.address();
+      const webhookUrl = `http://127.0.0.1:${port}/draft-hook`;
 
-      await new Promise((resolve, reject) => {
-        helper
-          .submission({
-            state: 'draft',
-            data: {
-              firstName: 'Sam',
-              email: 'sam@example.com',
-            },
-          })
-          .execute((err) => (err ? reject(err) : resolve()));
-      });
+      try {
+        await new Promise((resolve, reject) => {
+          helper
+            .form('saveAsDraftWebhook', [
+              {
+                type: 'textfield',
+                key: 'firstName',
+                label: 'First Name',
+                input: true,
+                validate: { required: true },
+              },
+            ])
+            .action('saveAsDraftWebhook', {
+              title: 'Webhook',
+              name: 'webhook',
+              handler: ['after'],
+              method: ['create', 'update'],
+              priority: 1,
+              settings: {
+                url: webhookUrl,
+                block: false,
+              },
+            })
+            .execute((err) => (err ? reject(err) : resolve()));
+        });
 
-      await wait(400);
-      assert.equal(template.hooks.getEmails().length, 0, 'Draft save must not fire email actions');
+        await new Promise((resolve, reject) => {
+          helper
+            .submission({
+              state: 'draft',
+              data: {
+                firstName: 'Sam',
+              },
+            })
+            .execute((err) => (err ? reject(err) : resolve()));
+        });
 
-      const existing = helper.getLastSubmission();
-      existing.state = 'submitted';
-      existing.data.firstName = 'Sam';
-      existing.data.email = 'sam@example.com';
-
-      const event = template.hooks.getEmitter();
-      const emailPromise = event
-        ? new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Email action did not fire after submitting the draft'));
-            }, 4000);
-            event.once('newMail', (email) => {
-              clearTimeout(timeout);
-              resolve(email);
-            });
-          })
-        : null;
-
-      await new Promise((resolve, reject) => {
-        helper
-          .submission('saveAsDraftEmail', existing)
-          .execute((err) => (err ? reject(err) : resolve()));
-      });
-
-      if (emailPromise) {
-        const email = await emailPromise;
-        assert.equal(email.subject, 'Draft should not send');
-        assert.equal(email.to, 'sam@example.com');
-      } else {
         await wait(400);
-        const emails = template.hooks.getEmails();
-        assert.equal(emails.length, 1, 'Submitting a draft must fire email actions');
-        assert.equal(emails[0].subject, 'Draft should not send');
+        assert.equal(hits.length, 0, 'Draft save must not fire webhook actions');
+
+        const existing = helper.getLastSubmission();
+        existing.state = 'submitted';
+        existing.data.firstName = 'Sam';
+
+        await new Promise((resolve, reject) => {
+          helper
+            .submission('saveAsDraftWebhook', existing)
+            .execute((err) => (err ? reject(err) : resolve()));
+        });
+
+        await wait(400);
+        assert.equal(hits.length, 1, 'Submitting a draft must fire webhook actions');
+      } finally {
+        await new Promise((resolve) => server.close(resolve));
       }
     });
   });
