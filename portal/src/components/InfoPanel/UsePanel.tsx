@@ -21,9 +21,10 @@ export const UsePanel = ({ type }: { type: 'form' | 'resource' }) => {
             <div className="context-expand">
               <p>
                 The visual rendering of this <span className="item-type-label">{name}</span>. You
-                can enter data directly from here as well. Incomplete entries are saved as drafts
-                for the signed-in user and restored the next time this {name.toLowerCase()} is
-                opened.
+                can enter data directly from here as well. Each change is saved in the background as
+                a server-side draft for the signed-in user (a moment after you stop typing) and
+                restored the next time this {name.toLowerCase()} is opened. Submit still runs
+                validation and turns the draft into a final submission.
               </p>
               <ul>
                 <li className="enterprise">
