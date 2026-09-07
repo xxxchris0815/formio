@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Form, useFormioContext } from '@formio/react';
+import { Form, FormProps, useFormioContext } from '@formio/react';
 import { useLocation } from 'wouter';
 
 /** Persist shortly after each change without a request per keystroke. */
@@ -15,8 +15,8 @@ export const EnterData = ({ url }: { url: string }) => {
   const { Formio } = useFormioContext();
   const [ready, setReady] = useState(false);
   const [canSaveDraft, setCanSaveDraft] = useState(false);
-  const [draftSubmission, setDraftSubmission] = useState<object | undefined>();
-  const draftIdRef = useRef<string | undefined>();
+  const [draftSubmission, setDraftSubmission] = useState<FormProps['submission']>();
+  const draftIdRef = useRef<string | undefined>(undefined);
   const lastDataRef = useRef('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
@@ -57,7 +57,7 @@ export const EnterData = ({ url }: { url: string }) => {
           if (existing?._id) {
             draftIdRef.current = existing._id;
             lastDataRef.current = JSON.stringify(existing.data || {});
-            setDraftSubmission(existing);
+            setDraftSubmission(existing as FormProps['submission']);
           }
         } catch {
           // The form still works if draft restore fails.
@@ -116,11 +116,7 @@ export const EnterData = ({ url }: { url: string }) => {
   persistDraftRef.current = persistDraft;
 
   const onChange = useCallback(
-    (
-      submission: { data?: Record<string, unknown>; metadata?: Record<string, unknown> },
-      _flags?: unknown,
-      modified?: boolean,
-    ) => {
+    (submission: { data?: Record<string, unknown>; metadata?: Record<string, unknown> }, _flags: unknown, modified: boolean) => {
       if (submittedRef.current || !canSaveDraft || !submission?.data) {
         return;
       }
@@ -160,12 +156,7 @@ export const EnterData = ({ url }: { url: string }) => {
 
   return (
     <div className="panel enter-data active">
-      <Form
-        src={url}
-        {...(draftSubmission ? { submission: draftSubmission } : {})}
-        onChange={onChange}
-        onSubmitDone={onSubmitDone}
-      />
+      <Form src={url} submission={draftSubmission} onChange={onChange} onSubmitDone={onSubmitDone} />
     </div>
   );
 };

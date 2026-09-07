@@ -30,11 +30,12 @@ RUN npm install \
 # Portal UI. Rewrite leftover monorepo "workspace:" specs so npm can resolve.
 WORKDIR /app/portal
 RUN npm pkg set \
-      dependencies.@formio/js="^5.5.2" \
-      dependencies.@formio/react="^6.2.1" \
-      devDependencies.@formio/core="^2.8.2" \
-  && npm install \
-  && npm run build
+      dependencies.@formio/js="5.5.2" \
+      dependencies.@formio/react="6.2.1" \
+      devDependencies.@formio/core="2.8.2" \
+      devDependencies.ajv="8.17.1"
+RUN npm install --legacy-peer-deps
+RUN NODE_OPTIONS=--max-old-space-size=2048 npm run build
 
 WORKDIR /app
 RUN apk del git
