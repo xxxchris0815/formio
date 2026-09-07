@@ -10,6 +10,27 @@ const errorCodes = require('./error-codes.js');
 const fetch = require('@formio/node-fetch-http-proxy');
 const { mockBrowserContext } = require('@formio/vm');
 mockBrowserContext();
+// inputmask (pulled in by @formio/js) reads these browser globals at load time.
+if (typeof globalThis.matchMedia !== 'function') {
+  globalThis.matchMedia = () => ({
+    matches: false,
+    media: '',
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() {
+      return false;
+    },
+  });
+}
+if (typeof globalThis.innerWidth === 'undefined') {
+  globalThis.innerWidth = 1280;
+}
+if (typeof globalThis.innerHeight === 'undefined') {
+  globalThis.innerHeight = 800;
+}
 const Formio = require('@formio/js');
 const debug = {
   idToBson: require('debug')('formio:util:idToBson'),
