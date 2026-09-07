@@ -30,7 +30,7 @@ services:
       - traefik
     labels:
       - traefik.enable=true
-      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik_network}
       - traefik.http.routers.formio.rule=Host(`${FORMIO_DOMAIN}`)
       - traefik.http.routers.formio.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.formio.tls=true
@@ -40,7 +40,7 @@ services:
 networks:
   internal:
   traefik:
-    name: ${TRAEFIK_NETWORK:-proxy}
+    name: ${TRAEFIK_NETWORK:-traefik_network}
     external: true
 
 volumes:
