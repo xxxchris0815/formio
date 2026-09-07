@@ -5,7 +5,11 @@ export const EnterData = ({ url }: { url: string }) => {
   const setLocation = useLocation()[1];
   return (
     <div className="panel enter-data active">
-      <Form src={url} onSubmitDone={() => setLocation('/view')} />
+      <Form
+        src={url}
+        options={{ saveDraft: true }}
+        onSubmitDone={() => setLocation('/view')}
+      />
     </div>
   );
 };

@@ -243,6 +243,12 @@ module.exports = (router) => {
     },
 
     async shouldExecute(action, req, res) {
+      // Draft saves must persist (Save Submission) but must not fire emails,
+      // webhooks, login, etc. Those run when the draft is later submitted.
+      if (req.body && req.body.state === 'draft' && action.name !== 'save') {
+        return false;
+      }
+
       const condition = action.condition;
       if (!condition) {
         return true;

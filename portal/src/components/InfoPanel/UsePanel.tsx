@@ -21,7 +21,9 @@ export const UsePanel = ({ type }: { type: 'form' | 'resource' }) => {
             <div className="context-expand">
               <p>
                 The visual rendering of this <span className="item-type-label">{name}</span>. You
-                can enter data directly from here as well.
+                can enter data directly from here as well. Incomplete entries are saved as drafts
+                for the signed-in user and restored the next time this {name.toLowerCase()} is
+                opened.
               </p>
               <ul>
                 <li className="enterprise">
