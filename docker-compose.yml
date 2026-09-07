@@ -1,28 +1,47 @@
-version: '3.8'
+# Form.io behind an already-running Traefik instance.
+# Copy .env.example to .env and set FORMIO_DOMAIN, secrets, and Traefik names.
+#
+# Find the Traefik network:  docker network ls
+# Confirm labels:            docker inspect <traefik-container>
+
 services:
   mongo:
-    image: mongo
-    restart: always
+    image: mongo:7
+    restart: unless-stopped
     volumes:
       - mdb-data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME
-      - MONGO_INITDB_ROOT_PASSWORD
+    networks:
+      - internal
+
   formio:
     build:
       context: ./
       dockerfile: Dockerfile
-    restart: always
-    links:
+    restart: unless-stopped
+    depends_on:
       - mongo
-    ports:
-      - '3001:3001'
     environment:
-      DEBUG: formio:*
-      NODE_CONFIG: '{"mongo": "mongodb://mongo:27017/formio"}'
-      ROOT_EMAIL: admin@example.com
-      ROOT_PASSWORD: CHANGEME
-    stdin_open: true # -i
-    tty: true # -t
+      ROOT_EMAIL: ${ROOT_EMAIL:-admin@example.com}
+      ROOT_PASSWORD: ${ROOT_PASSWORD:-CHANGEME}
+      NODE_CONFIG: >-
+        {"mongo":"mongodb://mongo:27017/formio","port":3001,"host":"${FORMIO_DOMAIN}","protocol":"https","domain":"https://${FORMIO_DOMAIN}","jwt":{"secret":"${JWT_SECRET}","expireTime":240},"mongoSecret":"${MONGO_SECRET}"}
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      - traefik.http.routers.formio.rule=Host(`${FORMIO_DOMAIN}`)
+      - traefik.http.routers.formio.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.formio.tls=true
+      - traefik.http.routers.formio.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.services.formio.loadbalancer.server.port=3001
+
+networks:
+  internal:
+  traefik:
+    name: ${TRAEFIK_NETWORK:-proxy}
+    external: true
+
 volumes:
   mdb-data:
