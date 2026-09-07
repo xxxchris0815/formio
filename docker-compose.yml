@@ -21,8 +21,8 @@ services:
     depends_on:
       - mongo
     environment:
-      ROOT_EMAIL: ${ROOT_EMAIL:-admin@example.com}
-      ROOT_PASSWORD: ${ROOT_PASSWORD:-CHANGEME}
+      ROOT_EMAIL: ${ROOT_EMAIL}
+      ROOT_PASSWORD: ${ROOT_PASSWORD}
       NODE_CONFIG: >-
         {"mongo":"mongodb://mongo:27017/formio","port":3001,"host":"${FORMIO_DOMAIN}","protocol":"https","domain":"https://${FORMIO_DOMAIN}","jwt":{"secret":"${JWT_SECRET}","expireTime":240},"mongoSecret":"${MONGO_SECRET}"}
     networks:
