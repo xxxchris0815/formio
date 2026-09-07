@@ -141,6 +141,7 @@ module.exports = (router) => {
           'owner',
           'access',
           'metadata',
+          'state',
           '_vnote',
         ]);
         req.rolesUpdate = req.body.roles;
@@ -209,7 +210,10 @@ module.exports = (router) => {
      * @param form
      */
     async function validateSubmission(req, res) {
-      req.noValidate = req.noValidate || (req.isAdmin && req.query.noValidate);
+      // Drafts still run the validator (calculated values, defaults) but ignore
+      // errors so incomplete required fields can be saved and restored later.
+      const isDraft = req.body && req.body.state === 'draft';
+      req.noValidate = req.noValidate || isDraft || (req.isAdmin && req.query.noValidate);
 
       // No need to validate on GET requests.
       if (!(['POST', 'PUT', 'PATCH'].includes(req.method) && req.body)) {

@@ -74,6 +74,14 @@ module.exports = function (formio) {
           description: 'Configurable metadata.',
         },
 
+        // Submission lifecycle state. "draft" skips required validation and
+        // non-save actions so the renderer can persist incomplete work.
+        state: {
+          type: String,
+          description: 'The submission state, e.g. "draft" or "submitted".',
+          index: true,
+        },
+
         // The data associated with this submission.
         data: {
           type: formio.mongoose.Schema.Types.Mixed,
@@ -100,6 +108,15 @@ module.exports = function (formio) {
   // Add a "recommmended" combined index.
   model.schema.index({
     form: 1,
+    deleted: 1,
+    created: -1,
+  });
+
+  // Restore-draft lookups: GET /form/:id/submission?state=draft&owner=:userId&sort=-created
+  model.schema.index({
+    form: 1,
+    owner: 1,
+    state: 1,
     deleted: 1,
     created: -1,
   });

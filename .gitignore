@@ -1,4 +1,5 @@
 .DS_Store
+.env
 .dccache
 .vscode
 .idea
