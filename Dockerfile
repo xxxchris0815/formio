@@ -27,9 +27,13 @@ RUN apk add --no-cache make python3 g++ git linux-headers \
 RUN npm install \
   && npm run build
 
-# Portal UI (no lockfile in this repo)
+# Portal UI. Rewrite leftover monorepo "workspace:" specs so npm can resolve.
 WORKDIR /app/portal
-RUN npm install \
+RUN npm pkg set \
+      dependencies.@formio/js="^5.5.2" \
+      dependencies.@formio/react="^6.2.1" \
+      devDependencies.@formio/core="^2.8.2" \
+  && npm install \
   && npm run build
 
 WORKDIR /app
