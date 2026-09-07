@@ -34,7 +34,7 @@ services:
       - traefik.http.routers.formio.rule=Host(`${FORMIO_DOMAIN}`)
       - traefik.http.routers.formio.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.formio.tls=true
-      - traefik.http.routers.formio.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.formio.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-myresolver}
       - traefik.http.services.formio.loadbalancer.server.port=3001
 
 networks:
